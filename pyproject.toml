@@ -1,0 +1,27 @@
+[project]
+name = "mediagent"
+version = "0.1.0"
+description = "Agent that answers medical questions based on evidence"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "metapub>=0.5.12",
+    "notebook>=7.3.2",
+    "pydantic-ai-slim>=0.0.18",
+]
+
+[tool.ruff]
+line-length = 99
+exclude = [
+    ".venv",
+    "venv",
+    ".git",
+    ".pyenv",
+    "__init__.py",
+    ".ipynb_checkpoints",
+    ".ruff_cache",
+    "__pycache__"
+]
+ignore = [
+    "F541" #f-string without any placeholders
+]
