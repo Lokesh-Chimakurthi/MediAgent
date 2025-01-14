@@ -5,9 +5,11 @@ description = "Agent that answers medical questions based on evidence"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "logfire>=3.1.1",
     "metapub>=0.5.12",
     "notebook>=7.3.2",
     "pydantic-ai-slim>=0.0.18",
+    "streamlit>=1.41.1",
 ]
 
 [tool.ruff]
