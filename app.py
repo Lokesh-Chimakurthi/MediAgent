@@ -21,8 +21,15 @@ if "loop" not in st.session_state:
     st.session_state.loop = asyncio.new_event_loop()
     asyncio.set_event_loop(st.session_state.loop)
 
-# Header
-st.title("PubMed Research Assistant")
+# Header and clear chat button in a row
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.title("PubMed Research Assistant")
+with col2:
+    if st.button("Clear Chat"):
+        st.session_state.messages = []
+        st.session_state.message_history = None
+        st.rerun()
 
 
 def format_citations(citations):
@@ -46,12 +53,12 @@ async def get_response(prompt, message_history):
     )
 
 
-# Chat input
+# Chat input and conversation management
 if prompt := st.chat_input("Enter your medical research question"):
     logfire.info("user_query", query=prompt)
 
-    # Show user message
-    st.chat_message("user").write(prompt)
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
 
     # Run agent
     with st.chat_message("assistant"):
@@ -61,27 +68,36 @@ if prompt := st.chat_input("Enter your medical research question"):
                     get_response(prompt, st.session_state.message_history)
                 )
 
-                # Log response
-                logfire.info(
-                    "agent_response",
-                    citations_count=len(result.data.citations),
-                    usage=result.usage.total_tokens,
-                )
+                # Create assistant's response content
+                response_content = {
+                    "answer": result.data.answer,
+                    "citations": format_citations(result.data.citations)
+                }
 
-                # Display answer
-                st.write(result.data.answer)
+                # Add assistant's response to chat history
+                st.session_state.messages.append({
+                    "role": "assistant", 
+                    "content": response_content
+                })
 
-                # Display citations in expandable section
-                with st.expander("Citations"):
-                    st.markdown(format_citations(result.data.citations))
-
-                # Update message history
+                # Update message history for the agent
                 st.session_state.message_history = result.all_messages()
 
             except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
+                error_message = f"An error occurred: {str(e)}"
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": {"answer": error_message, "citations": ""}
+                })
                 logfire.error("agent_error", error=str(e))
 
 # Display chat history
 for message in st.session_state.messages:
-    st.chat_message(message["role"]).write(message["content"])
+    with st.chat_message(message["role"]):
+        if message["role"] == "user":
+            st.write(message["content"])
+        else:
+            st.write(message["content"]["answer"])
+            if message["content"]["citations"]:
+                with st.expander("Citations"):
+                    st.markdown(message["content"]["citations"])

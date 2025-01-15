@@ -23,7 +23,7 @@ class SearchResponse(BaseModel):
     """Agent's response with citations"""
 
     answer: str = Field(
-        description="Detailed answer to the user's query with numbered citations like [1], [2]"
+        description="Detailed answer to the user's query with clickable numbered citations like [1], [2]"
     )
     citations: List[str] = Field(description="List of citations in format: '[number] Title - URL'")
 

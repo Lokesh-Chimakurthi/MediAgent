@@ -11,7 +11,7 @@ def fetch_articles(search_term):
         article = fetcher.article_by_pmid(pmid)
         article_data = {
             "title": article.title,
-            "abstract": article.abstract,
+            "abstract": article.abstract if article.abstract is not None else "",
             "authors": article.authors,
             "url": article.url,
         }
