@@ -1,6 +1,8 @@
 from metapub import PubMedFetcher
 import os
 import requests
+import xml.etree.ElementTree as ET
+import re
 
 
 def fetch_articles(search_term):
@@ -38,7 +40,7 @@ def fetch_clinical_trails(search_term):
     base_url = "https://clinicaltrials.gov/api/v2/studies"
     headers = {"accept": "application/json"}
     params = {
-        "query.term": "{search_term}",
+        "query.term": search_term,
         "filter.overallStatus": "COMPLETED",
         "sort": "@relevance",
         "pageSize": 20
@@ -85,13 +87,75 @@ def get_clinical_trails(search_term):
 
         # Store extracted information
         extracted_study_data = {
-            "nct_id": nct_id,
             "title": brief_title,
             # "last_update_post_date": last_update_post_date,
             "abstract": brief_summary,
             # "study_type": study_type,
+            'url': f"https://clinicaltrials.gov/study/{nct_id}",
             "primary_outcomes": primary_outcomes
         }
         extracted_data.append(extracted_study_data)
 
     return extracted_data[:5]
+
+
+def _fetch_medline_plus_raw(search_term):
+    """Fetches raw data from MedlinePlus API"""
+    base_url = "https://wsearch.nlm.nih.gov/ws/query"
+    params = {
+        "db": "healthTopics",
+        "term": search_term,
+        "retmax": "10",
+        "rettype": "brief"
+    }
+    
+    response = requests.get(base_url, params=params)
+    return ET.fromstring(response.content)
+
+def _clean_text(text):
+    """Remove XML/HTML tags and clean up whitespace"""
+    # Remove <span> tags
+    text = re.sub(r'<span[^>]*>', '', text)
+    text = text.replace('</span>', '')
+    
+    # Remove <p>, <ul>, <li> tags
+    text = re.sub(r'</?p>', '', text)
+    text = re.sub(r'</?ul>', '', text)
+    text = re.sub(r'</?li>', '• ', text)
+    
+    # Clean up whitespace
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
+def fetch_medline_plus(search_term):
+    """
+    Fetches and formats health topics from MedlinePlus based on a search term.
+    
+    Args:
+        search_term (str): The term to search for in MedlinePlus.
+    
+    Returns:
+        list: A list of dictionaries containing cleaned health topic information
+    """
+    root = _fetch_medline_plus_raw(search_term)
+    
+    results = []
+    for doc in root.findall('.//document'):
+        topic = {
+            'title': '',
+            'url': doc.get('url', ''),
+            'summary': ''
+        }
+        
+        for content in doc.findall('content'):
+            name = content.get('name')
+            text = ''.join(content.itertext())
+            
+            if name == 'title':
+                topic['title'] = _clean_text(text)
+            elif name == 'FullSummary':
+                topic['summary'] = _clean_text(text)
+        
+        results.append(topic)
+    
+    return results[:5]
