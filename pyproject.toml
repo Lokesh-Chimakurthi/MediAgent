@@ -9,6 +9,7 @@ dependencies = [
     "metapub>=0.5.12",
     "notebook>=7.3.2",
     "pydantic-ai-slim>=0.0.18",
+    "requests>=2.32.3",
     "streamlit>=1.41.1",
 ]
 

@@ -1039,6 +1039,7 @@ dependencies = [
     { name = "metapub" },
     { name = "notebook" },
     { name = "pydantic-ai-slim" },
+    { name = "requests" },
     { name = "streamlit" },
 ]
 
@@ -1048,6 +1049,7 @@ requires-dist = [
     { name = "metapub", specifier = ">=0.5.12" },
     { name = "notebook", specifier = ">=7.3.2" },
     { name = "pydantic-ai-slim", specifier = ">=0.0.18" },
+    { name = "requests", specifier = ">=2.32.3" },
     { name = "streamlit", specifier = ">=1.41.1" },
 ]
 
