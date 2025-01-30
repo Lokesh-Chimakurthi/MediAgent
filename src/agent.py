@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Optional
 import logfire
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai.messages import ModelMessage
 from pydantic_ai.usage import Usage, UsageLimits
-from .functions import fetch_articles
+from functions import fetch_articles, fetch_clinical_trails, fetch_medline_plus
 
 # Update logfire configuration to track everything
 logfire.configure(send_to_logfire="if-token-present")
@@ -15,8 +15,9 @@ class Article(BaseModel):
 
     title: str
     abstract: str
-    authors: List[str]
-    url: str
+    authors: Optional[List[str]] = None
+    url: str 
+    primary_outcomes: Optional[List[dict]] = None  # Make primary_outcomes optional with None as default
 
 
 class SearchResponse(BaseModel):
@@ -29,12 +30,12 @@ class SearchResponse(BaseModel):
 
 
 search_agent = Agent[None, SearchResponse](
-    "google-gla:gemini-2.0-flash-exp",
+    "google-gla:gemini-1.5-pro-002",
     result_type=SearchResponse,
     retries=4,  # Add retries for reliability
     system_prompt=(
-        """You are a medical research assistant. Your job is to answer questions only based on 
-        PubMed articles abstract provided. "
+        """You are a medical research assistant. Your job is to answer only medical questions based on evidence. 
+        You are provided with 3 tools: PubMed, ClinicalTrials.gov, and Medline Plus. You can use all tools at once.
         Use numbered citations in your answer like [1], [2] at the end of relevant sentences. 
         In the citations section, format each citation as: "[number] Title - URL". 
         Example format:\n
@@ -43,7 +44,8 @@ search_agent = Agent[None, SearchResponse](
         [1] First Article Title - http://url1\n"
         [2] Second Article Title - http://url2"
         Examples: Query: 'What is the treatment for diabetes?' keyword: 'diabetes treatment'
-        Query: 'what causes hairfall?' keyword: 'hairfall'"""
+        Query: 'what causes hairfall?' keyword: 'hair fall'
+        Be as detailed as possible in your answer. Provide citations to support your answer."""
     ),
 )
 
@@ -52,7 +54,21 @@ search_agent = Agent[None, SearchResponse](
 async def search_pubmed(ctx: RunContext[None], keyword: str) -> List[Article]:
     """Search PubMed for articles related to the keyword"""
     articles = fetch_articles(keyword)
-    logfire.info("found {article_count} articles", article_count=len(articles))
+    logfire.info("found {article_count} articles from pubmed", article_count=len(articles))
+    return [Article(**article) for article in articles]
+
+@search_agent.tool
+async def search_clinical_trials(ctx: RunContext[None], keyword: str) -> List[Article]:
+    """Search ClinicalTrials.gov for articles related to the keyword"""
+    articles = fetch_clinical_trails(keyword)
+    logfire.info("found {article_count} articles from clinical trails", article_count=len(articles))
+    return [Article(**article) for article in articles]
+
+@search_agent.tool
+async def search_medline_plus(ctx: RunContext[None], keyword: str) -> List[Article]:
+    """Search Medline Plus for articles related to the keyword"""
+    articles = fetch_medline_plus(keyword)
+    logfire.info("found {article_count} articles from medline plus", article_count=len(articles))
     return [Article(**article) for article in articles]
 
 
@@ -74,18 +90,21 @@ async def main():
         if query.lower() == "quit":
             break
 
-        result = await search_agent.run(
+        print("\nGenerating answer...")
+        async with search_agent.run_stream(
             query, usage=usage, usage_limits=usage_limits, message_history=message_history
-        )
-
-        print("\nAnswer:")
-        print(result.data.answer)
-        print("\nCitations:")
-        for citation in result.data.citations:
-            print(f"- {citation}")
+        ) as result:
+            async for response in result.stream():
+                # Clear previous line
+                print("\033[A\033[K", end="")
+                print("\nAnswer:")
+                print(response.answer)
+                if response.citations:
+                    print("\nCitations:")
+                    for citation in response.citations:
+                        print(f"- {citation}")
 
         message_history = result.all_messages()
-
 
 if __name__ == "__main__":
     import asyncio

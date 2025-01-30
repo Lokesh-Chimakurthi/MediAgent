@@ -36,7 +36,7 @@ def fetch_articles(search_term):
     return articles
 
 
-def fetch_clinical_trails(search_term):
+def get_clinical_trails(search_term):
     base_url = "https://clinicaltrials.gov/api/v2/studies"
     headers = {"accept": "application/json"}
     params = {
@@ -49,7 +49,7 @@ def fetch_clinical_trails(search_term):
     return response.json()
 
 
-def get_clinical_trails(search_term):
+def fetch_clinical_trails(search_term):
     """
     Extracts relevant information from the clinicaltrials.gov API response
     for a medical question-answering agent.
@@ -63,7 +63,7 @@ def get_clinical_trails(search_term):
     """
 
     extracted_data = []
-    output = fetch_clinical_trails(search_term)
+    output = get_clinical_trails(search_term)
     for study in output.get("studies", []):
         if not study.get("hasResults"):
             continue
