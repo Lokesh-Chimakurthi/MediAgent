@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai.messages import ModelMessage
 from pydantic_ai.usage import Usage, UsageLimits
-from functions import fetch_articles, fetch_clinical_trails, fetch_medline_plus
+from .functions import fetch_articles, fetch_clinical_trails, fetch_medline_plus
 
 # Update logfire configuration to track everything
 logfire.configure(send_to_logfire="if-token-present")
@@ -24,7 +24,7 @@ class SearchResponse(BaseModel):
     """Agent's response with citations"""
 
     answer: str = Field(
-        description="Detailed answer to the user's query with clickable numbered citations like [1], [2]"
+        description="Detailed Verbose answer to the user's query with clickable numbered citations like [1], [2]"
     )
     citations: List[str] = Field(description="List of citations in format: '[number] Title - URL'")
 
