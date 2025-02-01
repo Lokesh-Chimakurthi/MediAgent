@@ -144,7 +144,7 @@ def fetch_medline_plus(search_term):
         topic = {
             'title': '',
             'url': doc.get('url', ''),
-            'summary': ''
+            'abstract': ''
         }
         
         for content in doc.findall('content'):
@@ -154,7 +154,7 @@ def fetch_medline_plus(search_term):
             if name == 'title':
                 topic['title'] = _clean_text(text)
             elif name == 'FullSummary':
-                topic['summary'] = _clean_text(text)
+                topic['abstract'] = _clean_text(text)
         
         results.append(topic)
     
