@@ -13,3 +13,6 @@ logs/
 
 .logfire/
 me/
+templates/
+scripts/
+memory/
