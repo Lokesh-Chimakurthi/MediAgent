@@ -250,11 +250,12 @@ if __name__ == "__main__":
 
     # # Run the graph
     # print("\nRunning graph...\n")
-    # try:
-    #     answer = asyncio.run(run_graph(question))
-    #     print("\nAnswer:\n")
-    #     print(answer)
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    result = medline_agent.run_sync("What are effective treatments for migraine prevention?")
-    print(result.output)
+    try:
+        answer = asyncio.run(run_graph("what causes weakness of hair?"))
+        print("\nAnswer:\n")
+        print(answer)
+    except Exception as e:
+        print(f"Error: {e}")
+    # print_mermaid()
+    # result = medline_agent.run_sync("What are effective treatments for migraine prevention?")
+    # print(result.output)
